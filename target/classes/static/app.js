@@ -42,49 +42,10 @@ async function uploadReceipt() {
 function setUploadStatus(message, type) { document.getElementById('uploadStatus').innerHTML = `<span class="text-${type}">${message}</span>`; }
 
 async function loadDashboard() {
-
     if (!localStorage.getItem('token')) return;
-
-    const payload = {
-        merchant: document.getElementById('searchMerchant').value.trim(),
-        category: document.getElementById('searchCategory').value.trim(),
-        query: document.getElementById('searchQuery').value.trim()
-    };
-
-    try {
-
-        const [summary, receipts, alerts] = await Promise.all([
-
-            api('/api/analytics/summary', {
-                headers: authHeaders()
-            }),
-
-            api('/api/receipts/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...authHeaders()
-                },
-                body: JSON.stringify(payload)
-            }),
-
-            api('/api/receipts/warranties/alerts', {
-                headers: authHeaders()
-            })
-
-        ]);
-
-        renderSummary(summary);
-        renderReceipts(receipts);
-        renderAlerts(alerts);
-
-    } catch (error) {
-
-        console.error(error);
-        alert(error.message);
-
-    }
-
+    const payload = {merchant:document.getElementById('searchMerchant').value,category:document.getElementById('searchCategory').value,query:document.getElementById('searchQuery').value};
+    try { const [summary, receipts, alerts] = await Promise.all([api('/api/analytics/summary',{headers:authHeaders()}),api('/api/receipts/search',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(payload)}),api('/api/receipts/warranties/alerts',{headers:authHeaders()})]); renderSummary(summary); renderReceipts(receipts); renderAlerts(alerts); }
+    catch (error) { console.error(error); }
 }
 function renderSummary(s) { document.getElementById('summaryCards').innerHTML = [['Receipts',s.totalReceipts],['Total spending',currency.format(s.totalSpending || 0)],['Average receipt',currency.format(s.averageReceipt || 0)],['Highest expense',currency.format(s.highestExpense || 0)]].map(([label,value]) => `<div class="col-6 col-lg-3"><div class="metric-card"><span>${label}</span><strong>${value}</strong></div></div>`).join(''); }
 function renderReceipts(receipts) { const list = document.getElementById('receiptList'); list.innerHTML = receipts.length ? receipts.map(r => `<button class="receipt-row" onclick="openReceiptById(${r.id})"><span class="receipt-icon">⌾</span><span class="flex-grow-1 text-start"><strong>${escapeHtml(r.merchant || 'New receipt')}</strong><small>${r.purchaseDate || 'Date not set'} · ${r.category || 'Others'}${r.warrantyExpiryDate ? ` · Warranty until ${r.warrantyExpiryDate}` : ''}</small></span><strong>${currency.format(r.amount || 0)}</strong><span class="ms-2 text-secondary">›</span></button>`).join('') : '<div class="empty-state">No receipts match these filters. Upload your first receipt above.</div>'; }
@@ -94,27 +55,4 @@ function openReceipt(r) { document.getElementById('editId').value=r.id; document
 async function saveReceipt() { const payload={merchant:document.getElementById('editMerchant').value,purchaseDate:document.getElementById('editDate').value,amount:Number(document.getElementById('editAmount').value),currency:'INR',category:document.getElementById('editCategory').value,paymentMethod:document.getElementById('editPayment').value,warrantyMonths:Number(document.getElementById('editWarranty').value || 0)}; try { await api(`/api/receipts/${document.getElementById('editId').value}`,{method:'PUT',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(payload)}); receiptModal.hide(); loadDashboard(); } catch (e) { alert(e.message); } }
 function clearSearch() { ['searchMerchant','searchCategory','searchQuery'].forEach(id => document.getElementById(id).value=''); loadDashboard(); }
 function escapeHtml(value) { const span=document.createElement('span'); span.textContent=value; return span.innerHTML; }
-document.addEventListener("keypress", function(event) {
-
-    if (event.key === "Enter") {
-
-        const active = document.activeElement;
-
-        if (
-            active &&
-            (
-                active.id === "searchQuery" ||
-                active.id === "searchMerchant" ||
-                active.id === "searchCategory"
-            )
-        ) {
-
-            event.preventDefault();
-            loadDashboard();
-
-        }
-
-    }
-
-});
 document.addEventListener('DOMContentLoaded', () => { receiptModal = new bootstrap.Modal(document.getElementById('receiptModal')); localStorage.getItem('token') ? enterWorkspace() : showLogin(); });
