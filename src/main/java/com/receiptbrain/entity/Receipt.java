@@ -41,6 +41,8 @@ public class Receipt {
     private String fileName;
     private String filePath;
     private String previewPath;
+    @Lob
+    @Column(columnDefinition = "TEXT")
     private String rawText;
     private String aiSummary;
     private LocalDateTime createdAt = LocalDateTime.now();
