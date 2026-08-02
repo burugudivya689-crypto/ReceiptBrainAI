@@ -39,3 +39,4 @@ docker run --rm -p 8081:8081 receiptbrain-ai
 - The default database is H2 in-memory for quick setup.
 - The included SVG demo documents are automatically parsed for merchant, amount, date, payment method, category and warranty months. Photo/PDF OCR is intentionally not claimed as complete: connect a production OCR provider in `ReceiptService.extractReceiptDetails` for real photographed receipts.
 - H2 is in-memory, so data resets each time the app stops. Use a persistent database before deployment.
+# ReceiptBrainAI
