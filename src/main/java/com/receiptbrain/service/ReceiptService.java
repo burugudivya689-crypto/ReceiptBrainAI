@@ -117,14 +117,111 @@ public class ReceiptService {
     }
 
     public List<ReceiptDto> searchReceipts(String email, ReceiptSearchRequest request) {
-        User user = userRepository.findByEmail(email).orElseThrow();
-        return receiptRepository.findByUser(user).stream()
-                .filter(receipt -> request.merchant() == null || request.merchant().isBlank() || receipt.getMerchant() != null && receipt.getMerchant().toLowerCase().contains(request.merchant().toLowerCase()))
-                .filter(receipt -> request.category() == null || request.category().isBlank() || receipt.getCategory() != null && receipt.getCategory().equalsIgnoreCase(request.category()))
-                .filter(receipt -> request.query() == null || request.query().isBlank() || (receipt.getMerchant() != null && receipt.getMerchant().toLowerCase().contains(request.query().toLowerCase())) || (receipt.getAiSummary() != null && receipt.getAiSummary().toLowerCase().contains(request.query().toLowerCase())))
-                .map(this::toDto)
-                .toList();
+
+    User user = userRepository.findByEmail(email).orElseThrow();
+
+    String merchant = request.merchant();
+    String category = request.category();
+    BigDecimal minAmount = request.minAmount();
+    BigDecimal maxAmount = request.maxAmount();
+    String query = request.query();
+
+    // ---------- Natural Language Search ----------
+    if (query != null && !query.isBlank()) {
+
+        String q = query.toLowerCase();
+
+        if (q.contains("amazon"))
+            merchant = "amazon";
+
+        if (q.contains("flipkart"))
+            merchant = "flipkart";
+
+        if (q.contains("food"))
+            category = "Food";
+
+        if (q.contains("shopping"))
+            category = "Shopping";
+
+        if (q.contains("groceries"))
+            category = "Groceries";
+
+        if (q.contains("medical"))
+            category = "Health";
+
+        if (q.contains("transport"))
+            category = "Transport";
+        if (q.contains("electronics"))
+    category = "Shopping";
+
+if (q.contains("grocery"))
+    category = "Groceries";
+
+if (q.contains("fuel"))
+    category = "Transport";
+
+if (q.contains("restaurant"))
+    category = "Food";
+
+if (q.contains("hospital"))
+    category = "Health";
+
+if (q.contains("expired"))
+{
+    // Optional future enhancement
+}
+
+        // Above amount
+        Matcher above = Pattern.compile("above\\s*(\\d+)").matcher(q);
+
+        if (above.find()) {
+            minAmount = new BigDecimal(above.group(1));
+        }
+
+        // Below amount
+        Matcher below = Pattern.compile("below\\s*(\\d+)").matcher(q);
+
+        if (below.find()) {
+            maxAmount = new BigDecimal(below.group(1));
+        }
     }
+
+    String finalMerchant = merchant;
+    String finalCategory = category;
+    BigDecimal finalMin = minAmount;
+    BigDecimal finalMax = maxAmount;
+
+    return receiptRepository.findByUser(user).stream()
+
+            .filter(r ->
+                    finalMerchant == null ||
+                    finalMerchant.isBlank() ||
+                    (r.getMerchant() != null &&
+                     r.getMerchant().toLowerCase().contains(finalMerchant.toLowerCase()))
+            )
+
+            .filter(r ->
+                    finalCategory == null ||
+                    finalCategory.isBlank() ||
+                    (r.getCategory() != null &&
+                     r.getCategory().equalsIgnoreCase(finalCategory))
+            )
+
+            .filter(r ->
+                    finalMin == null ||
+                    (r.getAmount() != null &&
+                     r.getAmount().compareTo(finalMin) >= 0)
+            )
+
+            .filter(r ->
+                    finalMax == null ||
+                    (r.getAmount() != null &&
+                     r.getAmount().compareTo(finalMax) <= 0)
+            )
+
+            .map(this::toDto)
+            .toList();
+}
 
     public AnalyticsSummaryDto getAnalyticsSummary(String email) {
         User user = userRepository.findByEmail(email).orElseThrow();
