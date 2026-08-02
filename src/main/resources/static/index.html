@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReceiptBrain AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark app-nav">
+    <div class="container"><a class="navbar-brand fw-bold" href="#">Receipt<span>Brain</span> AI</a>
+        <div class="d-flex gap-2"><button id="loginButton" class="btn btn-outline-light btn-sm" onclick="showLogin()">Login</button><button id="registerButton" class="btn btn-light btn-sm" onclick="showRegister()">Create account</button><button id="logoutButton" class="btn btn-outline-light btn-sm d-none" onclick="logout()">Logout</button></div>
+    </div>
+</nav>
+<main class="container py-4 py-md-5">
+    <section class="hero p-4 p-md-5 mb-4">
+        <div class="row align-items-center"><div class="col-lg-8"><span class="eyebrow">YOUR PURCHASES, ORGANIZED</span><h1>Every receipt, ready when you need it.</h1><p>Keep purchase proof, understand spending, and stay ahead of expiring warranties in one simple workspace.</p><button class="btn btn-primary" onclick="showRegister()">Start organizing</button></div><div class="col-lg-4"><div class="hero-stat"><span>Warranty watch</span><strong>Never lose coverage</strong><small>Alerts arrive before expiry</small></div></div></div>
+    </section>
+    <section id="authSection" class="card app-card auth-card mb-4"><div class="card-body p-4"><div id="authBox"></div></div></section>
+    <section id="workspace" class="d-none">
+        <div class="row g-4 mb-4"><div class="col-lg-7"><div class="card app-card h-100"><div class="card-body p-4"><h2 class="h5">Add a receipt</h2><p class="text-secondary small">We save the original file and make the details editable for accurate tracking.</p><div class="input-group"><input id="receiptFile" class="form-control" type="file" accept="image/*,.pdf,.svg"><button class="btn btn-primary" onclick="uploadReceipt()">Upload</button></div><div id="uploadStatus" class="small mt-2"></div></div></div></div><div class="col-lg-5"><div class="card app-card h-100"><div class="card-body p-4"><div class="d-flex justify-content-between align-items-center"><h2 class="h5 mb-0">Warranty alerts</h2><span id="alertCount" class="badge text-bg-warning">0</span></div><div id="warrantyAlerts" class="mt-3 small text-secondary">No upcoming warranty deadlines.</div></div></div></div></div>
+        <section id="summaryCards" class="row g-3 mb-4"></section>
+        <section class="card app-card mb-4"><div class="card-body p-4"><div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3"><div><h2 class="h5 mb-1">Receipt library</h2><p class="small text-secondary mb-0">Search, review and correct extracted receipt details.</p></div><button class="btn btn-sm btn-outline-secondary" onclick="clearSearch()">Clear filters</button></div><div class="row g-2"><div class="col-md-4"><input id="searchMerchant" class="form-control" placeholder="Merchant"></div><div class="col-md-4"><input id="searchCategory" class="form-control" placeholder="Category"></div><div class="col-md-4"><div class="input-group"><input id="searchQuery" class="form-control" placeholder="Search receipts"><button class="btn btn-primary" onclick="loadDashboard()">Search</button></div></div></div><div id="receiptList" class="receipt-list mt-4"></div></div></section>
+    </section>
+</main>
+<div class="modal fade" id="receiptModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><form onsubmit="event.preventDefault(); saveReceipt();"><div class="modal-header"><h2 class="modal-title fs-5">Verify receipt details</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><input id="editId" type="hidden"><div class="mb-2"><label class="form-label">Merchant</label><input id="editMerchant" class="form-control" required></div><div class="row g-2"><div class="col"><label class="form-label">Purchase date</label><input id="editDate" class="form-control" type="date" required></div><div class="col"><label class="form-label">Amount (INR)</label><input id="editAmount" class="form-control" type="number" min="0" step="0.01" required></div></div><div class="row g-2 mt-1"><div class="col"><label class="form-label">Category</label><input id="editCategory" class="form-control"></div><div class="col"><label class="form-label">Warranty months</label><input id="editWarranty" class="form-control" type="number" min="0" value="0"></div></div><div class="mt-2"><label class="form-label">Payment method</label><input id="editPayment" class="form-control"></div></div><div class="modal-footer"><button class="btn btn-primary">Save receipt</button></div></form></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script><script src="app.js"></script>
+</body></html>
