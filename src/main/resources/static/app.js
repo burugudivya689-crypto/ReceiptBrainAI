@@ -4,7 +4,7 @@ const authHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('toke
 
 async function api(url, options = {}) {
     const response = await fetch(url, options);
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
         localStorage.removeItem('token');
         showLogin();
         document.getElementById('workspace').classList.add('d-none');
@@ -14,7 +14,7 @@ async function api(url, options = {}) {
         document.getElementById('logoutButton').classList.add('d-none');
         throw new Error('Your session expired. Please log in again.');
     }
-    if (!response.ok) throw new Error((await response.text()) || 'Something went wrong.');
+    if (!response.ok) { const error = await response.json().catch(() => null); throw new Error(error?.message || 'Something went wrong.'); }
     return response.json();
 }
 

@@ -14,7 +14,7 @@ services:
       - key: DB_PASSWORD
         sync: false
       - key: APP_JWT_SECRET
-        generateValue: true
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
