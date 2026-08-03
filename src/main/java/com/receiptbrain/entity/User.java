@@ -12,6 +12,9 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
+@ToString(exclude = "receipts")
+@EqualsAndHashCode(exclude = "receipts")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
