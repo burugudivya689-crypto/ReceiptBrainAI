@@ -5,11 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
-@Table(name = "receipt_items")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+
 @Data
 @ToString(exclude = "receipt")
 @EqualsAndHashCode(exclude = "receipt")
