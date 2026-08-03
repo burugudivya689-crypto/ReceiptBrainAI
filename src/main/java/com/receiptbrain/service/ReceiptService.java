@@ -28,6 +28,8 @@ import java.util.UUID;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 
 @Service
 @RequiredArgsConstructor
@@ -297,20 +299,56 @@ if (q.contains("expired"))
         String fileName = file.getOriginalFilename();
         ExtractedReceipt fallback = new ExtractedReceipt(guessMerchant(fileName), LocalDate.now(), BigDecimal.ZERO,
                 guessCategory(fileName), "Unknown", 0, "Automatic extraction needs an OCR provider. Review the suggested details below before saving.", false);
-        if (fileName == null || !(fileName.toLowerCase(Locale.ROOT).endsWith(".svg") || fileName.toLowerCase(Locale.ROOT).endsWith(".txt"))) return fallback;
+        if (fileName == null) return fallback;
 
-        String raw = new String(file.getBytes(), StandardCharsets.UTF_8);
-        String text = raw.replaceAll("<[^>]+>", " ").replaceAll("\\s+", " ").trim();
-        BigDecimal amount = findAmount(text, "(?i)TOTAL\\s*(?:₹|INR|RS\\.?)?\\s*([0-9,]+(?:\\.[0-9]{1,2})?)");
+        String lowerName = fileName.toLowerCase(Locale.ROOT);
+        String raw;
+        if (lowerName.endsWith(".pdf")) {
+            raw = extractTextFromPdf(file);
+        } else if (lowerName.endsWith(".svg") || lowerName.endsWith(".txt")) {
+            raw = new String(file.getBytes(), StandardCharsets.UTF_8);
+            if (lowerName.endsWith(".svg")) {
+                raw = raw.replaceAll("<[^>]+>", " ");
+            }
+        } else {
+            return fallback;
+        }
+
+        String text = raw.replaceAll("\\s+", " ").trim();
+        BigDecimal amount = findAmount(text);
         if (amount == null) amount = BigDecimal.ZERO;
         LocalDate purchaseDate = findDate(text);
-        int warrantyMonths = findInteger(text, "(?i)(?:WARRANTY|COVERAGE PERIOD)\\s*:?\\s*(\\d+)\\s*MONTHS", 0);
-        if (warrantyMonths == 0) warrantyMonths = findInteger(text, "(?i)(\\d+)\\s*MONTHS", 0);
+        int warrantyMonths = findWarrantyMonths(text);
         String merchant = merchantFromText(text, fallback.merchant());
         String payment = findPayment(text);
         String category = categoryForMerchant(merchant, fallback.category());
         boolean extracted = amount.compareTo(BigDecimal.ZERO) > 0 || !payment.equals("Unknown") || warrantyMonths > 0;
         return new ExtractedReceipt(merchant, purchaseDate, amount, category, payment, warrantyMonths, text, extracted);
+    }
+
+    private String extractTextFromPdf(MultipartFile file) throws IOException {
+        try (PDDocument document = PDDocument.load(file.getInputStream())) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            return stripper.getText(document);
+        }
+    }
+
+    private BigDecimal findAmount(String text) {
+        BigDecimal amount = findAmount(text, "(?i)(?:GRAND\\s+TOTAL|TOTAL\\s*(?:AMOUNT|DUE|PAYABLE)?|AMOUNT\\s+DUE|BALANCE\\s+DUE|NET\\s+TOTAL|PAYABLE)\\s*(?:₹|INR|Rs\\.?|Rs)?\\s*([0-9][0-9,]*(?:\\.[0-9]{1,2})?)");
+        if (amount != null) return amount;
+        amount = findAmount(text, "(?i)(?:₹|INR|Rs\\.?|Rs)\\s*([0-9][0-9,]*(?:\\.[0-9]{1,2})?)");
+        if (amount != null) return amount;
+        return findAmount(text, "(?i)(?:TOTAL|AMOUNT)\\s*[:]?\\s*([0-9][0-9,]*(?:\\.[0-9]{1,2})?)");
+    }
+
+    private int findWarrantyMonths(String text) {
+        int months = findInteger(text, "(?i)(?:WARRANTY|COVERAGE PERIOD|SERVICE PERIOD|GUARANTEE|GUARANTEE PERIOD)\\s*[:]?\\s*(\\d+)\\s*(?:MONTHS|MONTH)", 0);
+        if (months > 0) return months;
+        months = findInteger(text, "(?i)(\\d+)\\s*(?:MONTHS|MONTH)\\s*(?:warranty|guarantee|service|coverage)", 0);
+        if (months > 0) return months;
+        months = findInteger(text, "(?i)(\\d+)\\s*(?:YEARS|YEAR)\\s*(?:warranty|guarantee|service|coverage)", 0);
+        if (months > 0) return months * 12;
+        return 0;
     }
 
     private BigDecimal findAmount(String text, String pattern) {

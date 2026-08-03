@@ -34,12 +34,28 @@ function enterWorkspace() { document.getElementById('authSection').classList.add
 function logout() { localStorage.removeItem('token'); location.reload(); }
 
 async function uploadReceipt() {
-    const file = document.getElementById('receiptFile').files[0]; if (!file) return setUploadStatus('Choose an image or PDF first.', 'danger');
-    setUploadStatus('Uploading and preparing receipt…', 'secondary'); const body = new FormData(); body.append('file', file);
-    try { const receipt = await api('/api/receipts/upload', {method:'POST',headers:authHeaders(),body}); setUploadStatus('Saved. Please verify the suggested details.', 'success'); openReceipt(receipt); loadDashboard(); }
-    catch (error) { setUploadStatus(error.message, 'danger'); }
+    const file = document.getElementById('receiptFile').files[0];
+    if (!file) return setUploadStatus('Choose an image or PDF first.', 'danger');
+
+    setUploadStatus('Uploading and preparing receipt…', 'secondary');
+    const body = new FormData();
+    body.append('file', file);
+
+    try {
+        const receipt = await api('/api/receipts/upload', {method:'POST',headers:authHeaders(),body});
+        const amountLabel = receipt.amount ? currency.format(receipt.amount) : 'No amount detected';
+        const warrantyLabel = receipt.warrantyMonths ? `${receipt.warrantyMonths} month${receipt.warrantyMonths === 1 ? '' : 's'} warranty` : 'No warranty detected';
+        setUploadStatus(`Saved. ${amountLabel}. ${warrantyLabel}. Please verify the suggested details.`, 'success');
+        openReceipt(receipt);
+        loadDashboard();
+    } catch (error) {
+        setUploadStatus(error.message, 'danger');
+    }
 }
-function setUploadStatus(message, type) { document.getElementById('uploadStatus').innerHTML = `<span class="text-${type}">${message}</span>`; }
+
+function setUploadStatus(message, type) {
+    document.getElementById('uploadStatus').innerHTML = `<span class="text-${type}">${message}</span>`;
+}
 
 async function loadDashboard() {
 
