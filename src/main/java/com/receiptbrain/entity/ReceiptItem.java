@@ -10,6 +10,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
+@ToString(exclude = "receipt")
+@EqualsAndHashCode(exclude = "receipt")
 public class ReceiptItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
